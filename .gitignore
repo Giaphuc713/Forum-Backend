@@ -34,5 +34,8 @@ build/
 
 ### env ###
 .env
+src/main/resources/application-local.yaml
 ## documentation
 /docs
+##Claude
+CLAUDE.md

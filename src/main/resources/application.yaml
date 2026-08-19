@@ -1,13 +1,16 @@
 spring:
+  profiles:
+    active: local
+server:
+  port: ${PORT:8080}
   datasource:
-    url: jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:6543/postgres?user=postgres.fmxbkghfyjsqdxmwofzf&password=Phuc17032004!!
-    username: postgres.fmxbkghfyjsqdxmwofzf
-    password: ${SUPABASE_DB_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
-
   jpa:
     hibernate:
       ddl-auto: update       # dùng validate/none ở production
@@ -16,3 +19,15 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     show-sql: true
+    
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+  expiration-ms: 86400000
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+supabase:
+  url: ${SUPABASE_URL}
+  key: ${SUPABASE_KEY}
+  bucket: ${SUPABASE_BUCKET:forum_images}

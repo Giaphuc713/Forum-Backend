@@ -1,4 +1,4 @@
-package com.example.Forum;
+package com.backend.Forum;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
