@@ -4,7 +4,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import com.backend.Forum.dto.response.PostResponse;
+import com.backend.Forum.dto.response.ForumResponse;
 import com.backend.Forum.entity.Post;
+import com.backend.Forum.entity.Forum;
 
 @Mapper(componentModel = "spring")
 public interface ForumMapper {
@@ -15,6 +17,11 @@ public interface ForumMapper {
     @Mapping(target = "forumType", source = "forum.type")
     @Mapping(target = "authorId", source = "author.id")
     @Mapping(target = "authorName", source = "author.username")
-    @Mapping(target = "authorAvatarUrl", ignore = true)
     PostResponse toPostResponse(Post post);
+
+    @Mapping(target = "authorId", source = "author.id")
+    @Mapping(target = "authorName", source = "author.username")
+    @Mapping(target = "type", expression = "java(forum.getType().name())")
+    ForumResponse toForumResponse(Forum forum);
+
 }

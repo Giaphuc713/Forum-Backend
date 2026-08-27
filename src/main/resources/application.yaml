@@ -1,8 +1,6 @@
 spring:
   profiles:
     active: local
-server:
-  port: ${PORT:8080}
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
@@ -19,7 +17,12 @@ server:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     show-sql: true
-    
+logging:
+  level:
+    org.springframework.security: TRACE
+    org.springframework.web: DEBUG
+server:
+  port: ${PORT:8080} 
 jwt:
   secret-key: ${JWT_SECRET_KEY}
   expiration-ms: 86400000
