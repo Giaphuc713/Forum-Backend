@@ -27,6 +27,6 @@ public class CreatePostRequest {
     private String tags;
 
     private String imageUrl;
-
+    @Schema(description = "Attached image file", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private MultipartFile image;
 }

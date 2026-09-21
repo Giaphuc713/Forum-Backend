@@ -10,7 +10,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommentRequest {
+public class CreateCommentRequest {
 
     @NotNull(message = "StudentId is required")
     private Integer studentId;

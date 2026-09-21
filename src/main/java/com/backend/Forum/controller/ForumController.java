@@ -20,7 +20,7 @@ import com.backend.Forum.dto.response.PostResponse;
 import com.backend.Forum.dto.request.CreateForumRequest;
 import com.backend.Forum.dto.response.ForumResponse;
 import com.backend.Forum.dto.response.CommentResponse;
-import com.backend.Forum.dto.request.CommentRequest;
+import com.backend.Forum.dto.request.CreateCommentRequest;
 import com.backend.Forum.dto.response.ApiResponse;
 import com.backend.Forum.service.ForumService;
 import com.backend.Forum.service.StorageService;
@@ -82,7 +82,7 @@ public class ForumController {
             @RequestParam(value = "image", required = false) MultipartFile image) {
 
         String imageUrl = null;
-        if (imageUrl != null || !imageUrl.isEmpty()) {
+        if (image != null && !image.isEmpty()) {
             imageUrl = storageService.uploadImage(image);
         }
         UpdatePostRequest request = UpdatePostRequest.builder()
@@ -175,7 +175,7 @@ public class ForumController {
     @PostMapping("/comments")
     @Tag(name = "2. Comments")
     @Operation(summary = "Create a new comment")
-    public ApiResponse<CommentResponse> createComment(@RequestBody CommentRequest request) {
+    public ApiResponse<CommentResponse> createComment(@Valid @RequestBody CreateCommentRequest request) {
         return ApiResponse.success(forumService.createComment(request));
     }
 

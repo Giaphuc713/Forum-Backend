@@ -14,7 +14,7 @@ import com.backend.Forum.dto.request.CreatePostRequest;
 import com.backend.Forum.dto.response.PostResponse;
 import com.backend.Forum.dto.request.UpdatePostRequest;
 import com.backend.Forum.dto.request.CreateForumRequest;
-import com.backend.Forum.dto.request.CommentRequest;
+import com.backend.Forum.dto.request.CreateCommentRequest;
 import com.backend.Forum.dto.response.CommentResponse;
 import com.backend.Forum.dto.response.ForumResponse;
 import com.backend.Forum.entity.Forum;
@@ -206,13 +206,14 @@ public class ForumService {
         }
 
         @Transactional
-        public CommentResponse createComment(CommentRequest request) {
+        public CommentResponse createComment(CreateCommentRequest request) {
                 User user = userRepository.findById(request.getStudentId())
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "User not found with ID: " + request.getStudentId()));
                 Post post = postRepository.findById(request.getPostId())
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Post not found with ID: " + request.getPostId()));
+
                 Comment comment = Comment.builder()
                                 .post(post)
                                 .author(user)

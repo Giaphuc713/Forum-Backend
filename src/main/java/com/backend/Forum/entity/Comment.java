@@ -31,7 +31,7 @@ public class Comment {
     private List<Comment> replies = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id", nullable = false)
+    @JoinColumn(name = "parent_id", nullable = true)
     private Comment parent;
 
     @ManyToOne(fetch = FetchType.LAZY)
