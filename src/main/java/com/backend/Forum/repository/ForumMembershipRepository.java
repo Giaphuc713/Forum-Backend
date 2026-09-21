@@ -13,4 +13,7 @@ public interface ForumMembershipRepository extends JpaRepository<ForumMembership
     boolean existsByForum_IdAndStudent_IdAndStatus(
             Integer ForumId, Integer StudentId,
             ForumMembership.MembershipStatus Status);
+
+    boolean existsByForum_IdAndStudent_IdAndMembershipRole(Integer forumId, Integer studentId,
+            ForumMembership.MembershipRole role);
 }

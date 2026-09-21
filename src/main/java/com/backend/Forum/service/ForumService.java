@@ -14,12 +14,15 @@ import com.backend.Forum.dto.request.CreatePostRequest;
 import com.backend.Forum.dto.response.PostResponse;
 import com.backend.Forum.dto.request.UpdatePostRequest;
 import com.backend.Forum.dto.request.CreateForumRequest;
+import com.backend.Forum.dto.request.CommentRequest;
+import com.backend.Forum.dto.response.CommentResponse;
 import com.backend.Forum.dto.response.ForumResponse;
 import com.backend.Forum.entity.Forum;
 import com.backend.Forum.entity.ForumMembership;
 import com.backend.Forum.entity.Post;
 import com.backend.Forum.entity.Role;
 import com.backend.Forum.entity.User;
+import com.backend.Forum.entity.Comment;
 import com.backend.Forum.exception.AcademicException;
 import com.backend.Forum.exception.ResourceNotFoundException;
 import com.backend.Forum.mapper.ForumMapper;
@@ -28,6 +31,7 @@ import com.backend.Forum.repository.PostReposity;
 import com.backend.Forum.repository.UserRepository;
 import com.backend.Forum.repository.UserRepository;
 import com.backend.Forum.repository.ForumMembershipRepository;
+import com.backend.Forum.repository.CommentRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +43,8 @@ public class ForumService {
         private final UserRepository userRepository;
         private final ForumRepository forumRepository;
         private final ForumMapper forumMapper;
+        private final CommentRepository commentRepository;
+
         private final ForumMembershipRepository forumMembershipRepository;
 
         private static final String DEFAULT_RULES = "1. Tôn trọng các thành viên khác.\n2. Không đăng nội dung phản cảm, kích động.\n3. Không quảng cáo, spam.\n4. Thảo luận văn minh, tôn trọng ý kiến đóng góp.";
@@ -101,7 +107,7 @@ public class ForumService {
                                 .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Post not found"));
 
                 if (!post.getAuthor().getId().equals(authorId)) {
-                        throw new AcademicException(HttpStatus.NOT_FOUND, "You can't Delete not your post");
+                        throw new AcademicException(HttpStatus.NOT_FOUND, "You can't delete not your post");
                 }
 
                 postRepository.delete(post);
@@ -197,6 +203,88 @@ public class ForumService {
                 }
                 // Delete forum will casual delete all posts, comments, and likes in that forum
                 forumRepository.delete(forum);
+        }
+
+        @Transactional
+        public CommentResponse createComment(CommentRequest request) {
+                User user = userRepository.findById(request.getStudentId())
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "User not found with ID: " + request.getStudentId()));
+                Post post = postRepository.findById(request.getPostId())
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Post not found with ID: " + request.getPostId()));
+                Comment comment = Comment.builder()
+                                .post(post)
+                                .author(user)
+                                .content(request.getContent())
+                                .build();
+
+                if (request.getParentId() != null) {
+                        Comment parentComment = commentRepository.findById(request.getParentId())
+                                        .orElseThrow(() -> new ResourceNotFoundException(
+                                                        "Parent comment not found with ID: "
+                                                                        + request.getParentId()));
+                        comment.setParent(parentComment);
+                }
+                Comment savedComment = commentRepository.save(comment);
+                // publish event for notification
+                post.setCommentsCount(post.getCommentsCount() + 1);
+                postRepository.save(post);
+                return forumMapper.toCommentResponse(savedComment);
+        }
+
+        public CommentResponse getCommentById(Integer commentId) {
+                Comment comment = commentRepository.findById(commentId)
+                                .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND,
+                                                "Comment not found with ID: " + commentId));
+                return forumMapper.toCommentResponse(comment);
+        }
+
+        @Transactional
+        public CommentResponse updateComment(Integer commentId, Integer authorId, String content) {
+                Comment comment = commentRepository.findById(commentId)
+                                .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND,
+                                                "Comment not found with ID: " + commentId));
+                if (!comment.getAuthor().getId().equals(authorId)) {
+                        throw new AcademicException(HttpStatus.NOT_FOUND, "Only author can update their comment");
+                }
+                comment.setContent(content);
+                return forumMapper.toCommentResponse(commentRepository.save(comment));
+        }
+
+        @Transactional
+        public void deleteComment(Integer commentId, Integer authorId) {
+                Comment comment = commentRepository.findById(commentId)
+                                .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND,
+                                                "Comment not found with ID: " + commentId));
+                // permission check:
+                // 1. Author of current comment
+                // 2. Author of post
+                // 3. Forum owner
+                Post post = comment.getPost();
+                boolean isPostAuthor = post.getAuthor().getId().equals(authorId);
+                boolean isForumOwner = post.getForum().getAuthor().getId().equals(authorId);
+                boolean isCommentAuthor = forumMembershipRepository.existsByForum_IdAndStudent_IdAndMembershipRole(
+                                post.getForum().getId(), authorId, ForumMembership.MembershipRole.OWNER);
+                if (!isPostAuthor && !isForumOwner && !isCommentAuthor) {
+                        throw new AcademicException(HttpStatus.NOT_FOUND,
+                                        "You don't have permission to delete comment");
+                }
+                commentRepository.delete(comment);
+                // Count comments to delete (including nested relies)
+                long countToDelete = countCommentAndRelies(comment);
+                post.setCommentsCount(Math.max(0, post.getCommentsCount() - (int) countToDelete));
+                postRepository.save(post);
+        }
+
+        private long countCommentAndRelies(Comment comment) {
+                List<Comment> relies = commentRepository.findByParentId(comment.getId());
+
+                long count = 1;
+                for (Comment rely : relies) {
+                        count += countCommentAndRelies(rely);
+                }
+                return count;
         }
 
 }

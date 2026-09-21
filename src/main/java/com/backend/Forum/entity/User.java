@@ -30,6 +30,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "student_roles", joinColumns = @JoinColumn(name = "student_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();

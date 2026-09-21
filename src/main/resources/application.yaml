@@ -26,6 +26,7 @@ server:
 jwt:
   secret-key: ${JWT_SECRET_KEY}
   expiration-ms: 86400000
+  refreshTokenExpirationMs: ${REFRESH_TOKEN_EXPIRATION_MS}
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

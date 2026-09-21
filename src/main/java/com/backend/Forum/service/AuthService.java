@@ -8,12 +8,16 @@ import com.backend.Forum.dto.response.AuthResponse;
 import com.backend.Forum.dto.response.UserResponse;
 import com.backend.Forum.entity.Role;
 import com.backend.Forum.entity.User;
+import com.backend.Forum.entity.RefreshToken;
 import com.backend.Forum.exception.AcademicException;
 import com.backend.Forum.entity.PasswordResetToken;
 import com.backend.Forum.repository.UserRepository;
 import com.backend.Forum.repository.RoleRepository;
 import com.backend.Forum.repository.PasswordResetTokenRepository;
+import com.backend.Forum.repository.RefreshTokenRepository;
 import com.backend.Forum.security.JwtService;
+import com.backend.Forum.security.JwtUtils;
+import com.backend.Forum.security.StudentDetailsImplementation;
 
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -28,10 +32,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
 @Transactional
@@ -44,7 +54,8 @@ public class AuthService {
         private final PasswordResetTokenRepository passwordResetTokenRepository;
         private final JavaMailSender mailSender;
         private final AuthenticationManager authenticationManager;
-        private final JwtService jwtService;
+        private final JwtUtils jwtUtils;
+        private final RefreshTokenService refreshTokenService;
 
         @Transactional
         public UserResponse register(RegisterRequest request) {
@@ -74,33 +85,37 @@ public class AuthService {
         private UserResponse toResponse(User user) {
                 return new UserResponse(
                                 user.getId(),
-                                user.getUsername(), // Username là String, không gọi .name()
+                                user.getUsername(),
                                 user.getEmail(),
                                 user.getRoles().stream()
                                                 .map(role -> role.getName().name())
-                                                .collect(java.util.stream.Collectors.joining(",")) // Chuyển đổi
-                                                                                                   // Set<Role> thành
-                                                                                                   // String
-                );
+                                                .collect(java.util.stream.Collectors.joining(",")));
         }
 
         public AuthResponse login(LoginRequest request) {
                 try {
-                        authenticationManager
-                                        .authenticate(new UsernamePasswordAuthenticationToken(request.email(),
-                                                        request.password()));
+                        Authentication authentication = authenticationManager.authenticate(
+                                        new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        StudentDetailsImplementation userDetails = (StudentDetailsImplementation) authentication
+                                        .getPrincipal();
+                        String accessToken = jwtUtils.generateJwtToken(userDetails);
+                        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
+                        List<String> roles = userDetails.getAuthorities().stream().map(role -> role.getAuthority())
+                                        .collect(Collectors.toList());
+                        return new AuthResponse(accessToken, refreshToken.getToken(), userDetails.getId(),
+                                        userDetails.getEmail(),
+                                        userDetails.getUsername(), roles);
                 } catch (BadCredentialsException e) {
-                        throw new ResponseStatusException(
-                                        HttpStatus.UNAUTHORIZED,
-                                        "Sai email đăng nhập hoặc mật khẩu");
+                        throw new AcademicException(HttpStatus.UNAUTHORIZED, "Mật khẩu không chính xác!");
+                } catch (DisabledException e) {
+                        throw new AcademicException(HttpStatus.FORBIDDEN, "Tài khoản của bạn đã bị vô hiệu hóa!");
+                } catch (LockedException e) {
+                        throw new AcademicException(HttpStatus.FORBIDDEN, "Tài khoản của bạn đã bị khóa!");
+                } catch (Exception e) {
+                        throw new AcademicException(HttpStatus.INTERNAL_SERVER_ERROR,
+                                        "Đăng nhập thất bại: " + e.getMessage());
                 }
-                User user = userRepository.findByEmail(request.email()).orElseThrow(() -> new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Không tìm thấy email"));
-                return new AuthResponse(jwtService.generateToken(user.getEmail()), user.getEmail(),
-                                user.getRoles().stream()
-                                                .map(role -> role.getName().name())
-                                                .collect(java.util.stream.Collectors.joining(",")));
         }
 
         public UserResponse getCurrentUser(String email) {

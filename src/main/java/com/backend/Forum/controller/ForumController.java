@@ -19,7 +19,8 @@ import com.backend.Forum.dto.request.UpdatePostRequest;
 import com.backend.Forum.dto.response.PostResponse;
 import com.backend.Forum.dto.request.CreateForumRequest;
 import com.backend.Forum.dto.response.ForumResponse;
-import com.backend.Forum.entity.User;
+import com.backend.Forum.dto.response.CommentResponse;
+import com.backend.Forum.dto.request.CommentRequest;
 import com.backend.Forum.dto.response.ApiResponse;
 import com.backend.Forum.service.ForumService;
 import com.backend.Forum.service.StorageService;
@@ -47,7 +48,7 @@ public class ForumController {
                         PageRequest.of(page, size, Sort.by("id").descending())));
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN') or #request.studentId == principal.id")
     @PostMapping(value = "/posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Tag(name = "2. Posts")
     @Operation(summary = "Create a new post with optional image ( tạo bài viết kèm ảnh)")
@@ -59,7 +60,7 @@ public class ForumController {
         return ApiResponse.success(forumService.createPost(request));
     }
 
-    @PreAuthorize("@securityUtils.isCurrentUser(#authorId) or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or #authorId == principal.id")
     @DeleteMapping("/posts/{postId}")
     @Tag(name = "2. Posts")
     @Operation(summary = "Delete a post by owner or admin")
@@ -68,7 +69,7 @@ public class ForumController {
         return ApiResponse.success("Delete Post successfully");
     }
 
-    @PreAuthorize("@securityUtils.isCurrentUser(#authorId) or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or #authorId == principal.id")
     @PutMapping(value = "/posts/{postId}", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @Tag(name = "2. Posts")
     @Operation(summary = "Update a post by owner")
@@ -93,7 +94,7 @@ public class ForumController {
 
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN') or #authorId == principal.id")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Tag(name = "1. Forums")
     @Operation(summary = "Create a new forum (tạo forum mới)")
@@ -127,7 +128,7 @@ public class ForumController {
         return ApiResponse.success(forumService.getAllForums(studentId));
     }
 
-    @PreAuthorize("@securityUtils.isCurrentUser(#authorId) or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or #authorId == principal.id")
     @PutMapping(value = "/{forumId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Tag(name = "1. Forums")
     @Operation(summary = "Update a forum by owner or admin")
@@ -154,13 +155,46 @@ public class ForumController {
         return ApiResponse.success(forumService.updateForum(forumId, request, isPublic));
     }
 
-    @PreAuthorize("hasRole('ADMIN') or @securityUtils.isCurrentUser(#authorId)")
+    @PreAuthorize("hasRole('ADMIN') or #authorId == principal.id")
     @DeleteMapping("/{forumId}")
     @Tag(name = "1. Forums")
     @Operation(summary = "Delete a forum by owner or admin")
     public ApiResponse<String> deleteForum(@PathVariable Integer forumId, @RequestParam Integer authorId) {
         forumService.deleteForum(forumId, authorId);
         return ApiResponse.success("Delete Forum successfully");
+    }
+
+    @GetMapping("/comment/{commentId}")
+    @Tag(name = "2. Comments")
+    @Operation(summary = "Get comment and relies")
+    public ApiResponse<CommentResponse> getCommentById(@PathVariable Integer commentId) {
+        return ApiResponse.success(forumService.getCommentById(commentId));
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or #request.studentId == principal.id")
+    @PostMapping("/comments")
+    @Tag(name = "2. Comments")
+    @Operation(summary = "Create a new comment")
+    public ApiResponse<CommentResponse> createComment(@RequestBody CommentRequest request) {
+        return ApiResponse.success(forumService.createComment(request));
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or #authorId == principal.id")
+    @PutMapping("/comments/{commentId}")
+    @Tag(name = "2. Comments")
+    @Operation(summary = "Update a comment by owner or admin")
+    public ApiResponse<CommentResponse> updateComment(@PathVariable Integer commentId, @RequestParam Integer authorId,
+            @RequestParam String content) {
+        return ApiResponse.success(forumService.updateComment(commentId, authorId, content));
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or #authorId == principal.id")
+    @DeleteMapping("/comments/{commentId}")
+    @Tag(name = "2. Comments")
+    @Operation(summary = "Delete a comment by owner or admin")
+    public ApiResponse<String> deleteComment(@PathVariable Integer commentId, @RequestParam Integer authorId) {
+        forumService.deleteComment(commentId, authorId);
+        return ApiResponse.success("Delete Comment successfully");
     }
 
 }

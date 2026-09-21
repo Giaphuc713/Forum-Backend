@@ -21,7 +21,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String HEADER = "Authorization";
     private static final String PREFIX = "Bearer";
 
-    private final JwtService jwtService;
+    private final JwtUtils jwtUtils;
     private final CustomUserDetailsService userDetailsService;
 
     @Override
@@ -35,8 +35,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(PREFIX.length()).trim();
-        if (jwtService.isTokenValid(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
-            String username = jwtService.extractUsername(token);
+        if (jwtUtils.validateJwtToken(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
+            String username = jwtUtils.getEmailFromJwtToken(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails,
                     null, userDetails.getAuthorities());
