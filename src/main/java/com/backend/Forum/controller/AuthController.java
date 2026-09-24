@@ -45,4 +45,10 @@ public class AuthController {
         authService.resetPassword(request);
         return ApiResponse.success("Password reset successful");
     }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout current user")
+    public ApiResponse<String> logoutUser() {
+        return ApiResponse.success(authService.logoutUser());
+    }
 }

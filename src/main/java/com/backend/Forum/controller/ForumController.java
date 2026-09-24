@@ -7,6 +7,9 @@ import lombok.*;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -197,4 +200,47 @@ public class ForumController {
         return ApiResponse.success("Delete Comment successfully");
     }
 
+    @GetMapping("/search")
+    @Tag(name = "3. Search")
+    @Operation(summary = "Search posts")
+    public ApiResponse<Page<PostResponse>> searchPost(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam String keyword) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ApiResponse.success(forumService.searchPost(keyword, pageable));
+    }
+
+    @GetMapping("/search/tags")
+    @Tag(name = "3. Search")
+    @Operation(summary = "Get posts by tag")
+    public ApiResponse<Page<PostResponse>> getPostsByTag(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam String tag) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ApiResponse.success(forumService.getPostsByTag(tag, pageable));
+    }
+
+    @GetMapping("/search/student")
+    @Tag(name = "3. Search")
+    @Operation(summary = "Get posts by student")
+    public ApiResponse<Page<PostResponse>> getPostsByUserId(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam Integer studentId) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ApiResponse.success(forumService.getPostsByUserId(studentId, pageable));
+    }
+
+    @GetMapping("/search/forumId")
+    @Tag(name = "3. Search")
+    @Operation(summary = "Get posts by forum")
+    public ApiResponse<Page<PostResponse>> getPostsByForumId(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam Integer forumId) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ApiResponse.success(forumService.getPostsByForumId(forumId, pageable));
+    }
 }
