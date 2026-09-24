@@ -1,16 +1,16 @@
 package com.backend.Forum.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
 import lombok.*;
-
 import org.springframework.web.multipart.MultipartFile;
 
 @Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class CreatePostRequest {
     @NotNull(message = "Forum ID is required")
     private Integer forumId;
@@ -25,7 +25,8 @@ public class CreatePostRequest {
     private String content;
 
     private String tags;
-    private String imageUrl;
-    private MultipartFile image;
 
+    private String imageUrl;
+    @Schema(description = "Attached image file", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private MultipartFile image;
 }
