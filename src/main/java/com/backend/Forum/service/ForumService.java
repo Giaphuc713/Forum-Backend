@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
+
 import com.backend.Forum.dto.request.CreatePostRequest;
 import com.backend.Forum.dto.response.PostResponse;
 import com.backend.Forum.dto.request.UpdatePostRequest;
@@ -30,8 +32,10 @@ import com.backend.Forum.repository.ForumRepository;
 import com.backend.Forum.repository.PostReposity;
 import com.backend.Forum.repository.UserRepository;
 import com.backend.Forum.repository.UserRepository;
+import com.backend.Forum.repository.PostRepository;
 import com.backend.Forum.repository.ForumMembershipRepository;
 import com.backend.Forum.repository.CommentRepository;
+import com.backend.Forum.event.NotificationEvent;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -39,13 +43,13 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class ForumService {
-        private final PostReposity postRepository;
         private final UserRepository userRepository;
         private final ForumRepository forumRepository;
         private final ForumMapper forumMapper;
         private final CommentRepository commentRepository;
-
+        private final PostRepository postRepository;
         private final ForumMembershipRepository forumMembershipRepository;
+        private final ApplicationEventPublisher applicationEventPublisher;
 
         private static final String DEFAULT_RULES = "1. Tôn trọng các thành viên khác.\n2. Không đăng nội dung phản cảm, kích động.\n3. Không quảng cáo, spam.\n4. Thảo luận văn minh, tôn trọng ý kiến đóng góp.";
 
@@ -81,6 +85,8 @@ public class ForumService {
                                 .build();
 
                 Post savedPost = postRepository.save(post);
+                // Publish event for post created
+                applicationEventPublisher.publishEvent(new NotificationEvent.PostCreated(savedPost));
                 return forumMapper.toPostResponse(savedPost);
         }
 
@@ -229,6 +235,7 @@ public class ForumService {
                 }
                 Comment savedComment = commentRepository.save(comment);
                 // publish event for notification
+                applicationEventPublisher.publishEvent(new NotificationEvent.CommentCreated(savedComment));
                 post.setCommentsCount(post.getCommentsCount() + 1);
                 postRepository.save(post);
                 return forumMapper.toCommentResponse(savedComment);
@@ -286,6 +293,22 @@ public class ForumService {
                         count += countCommentAndRelies(rely);
                 }
                 return count;
+        }
+
+        public Page<PostResponse> searchPost(String keyword, Pageable page) {
+                return postRepository.searchPosts(keyword, page).map(forumMapper::toPostResponse);
+        }
+
+        public Page<PostResponse> getPostsByTag(String tag, Pageable page) {
+                return postRepository.findByTag(tag, page).map(forumMapper::toPostResponse);
+        }
+
+        public Page<PostResponse> getPostsByForumId(Integer forumId, Pageable page) {
+                return postRepository.findByForumId(forumId, page).map(forumMapper::toPostResponse);
+        }
+
+        public Page<PostResponse> getPostsByUserId(Integer authorId, Pageable page) {
+                return postRepository.findByAuthorId(authorId, page).map(forumMapper::toPostResponse);
         }
 
 }

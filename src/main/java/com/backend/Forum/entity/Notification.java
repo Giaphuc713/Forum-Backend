@@ -38,6 +38,9 @@ public class Notification {
     @Column(name = "is_read")
     private Boolean isRead = Boolean.FALSE;
 
+    @Column(name = "type", length = 50)
+    private String type;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

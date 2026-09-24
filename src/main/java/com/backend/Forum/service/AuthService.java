@@ -177,4 +177,13 @@ public class AuthService {
                 passwordResetTokenRepository.delete(resetToken);
         }
 
+        public String logoutUser() {
+                Object principle = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+                if (principle instanceof StudentDetailsImplementation userDetails) {
+                        Integer userId = ((StudentDetailsImplementation) principle).getId();
+                        refreshTokenService.deleteByUserId(userId);
+                }
+                return "Logout succesfully";
+        }
+
 }
