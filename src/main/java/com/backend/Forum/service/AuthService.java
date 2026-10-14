@@ -165,6 +165,12 @@ public class AuthService {
                 }
         }
 
+        public User findByUsername(String username) {
+                return userRepository.findByUsername(username).orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Không tìm thấy username"));
+        }
+
         @Transactional
         public void resetPassword(ResetPasswordRequest request) {
                 PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.getToken())

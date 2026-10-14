@@ -1,5 +1,6 @@
 package com.backend.Forum.security;
 
+import lombok.*;
 import com.backend.Forum.entity.User;
 import com.backend.Forum.repository.UserRepository;
 

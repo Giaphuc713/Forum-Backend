@@ -3,7 +3,8 @@ package com.backend.Forum.security;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +19,7 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     private static final String HEADER = "Authorization";
     private static final String PREFIX = "Bearer";
 
@@ -42,6 +44,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     null, userDetails.getAuthorities());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // --- Inspect what is stored in SecurityContextHolder ---
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            StudentDetailsImplementation principal = (StudentDetailsImplementation) auth.getPrincipal();
+            log.info("=== SecurityContextHolder Value ===");
+            log.info("  Principal ID       : {}", principal.getId());
+            log.info("  Principal Username : {}", principal.getUsername());
+            log.info("  Principal Email    : {}", principal.getEmail());
+            log.info("  Authorities        : {}", auth.getAuthorities());
+            log.info("  Credentials        : {}", auth.getCredentials()); // null (password wiped)
+            log.info("  Details            : {}", auth.getDetails()); // IP + session info
+            log.info("  isAuthenticated    : {}", auth.isAuthenticated());
+            log.info("===================================");
+
         }
         filterChain.doFilter(request, response);
     }

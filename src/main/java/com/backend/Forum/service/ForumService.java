@@ -213,6 +213,7 @@ public class ForumService {
 
         @Transactional
         public CommentResponse createComment(CreateCommentRequest request) {
+
                 User user = userRepository.findById(request.getStudentId())
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "User not found with ID: " + request.getStudentId()));

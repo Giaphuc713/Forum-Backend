@@ -29,6 +29,7 @@ jwt:
   refreshTokenExpirationMs: ${REFRESH_TOKEN_EXPIRATION_MS}
 springdoc:
   swagger-ui:
+    persist-authorization: true
     path: /swagger-ui.html
 
 supabase:

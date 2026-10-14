@@ -50,4 +50,6 @@ public class ForumMembership {
     public enum MembershipStatus {
         PENDING, APPROVED, REJECTED
     }
+
+
 }

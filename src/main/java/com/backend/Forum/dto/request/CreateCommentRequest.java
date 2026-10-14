@@ -18,8 +18,10 @@ public class CreateCommentRequest {
     @NotNull(message = "PostId is required")
     private Integer postId;
 
-    @NotNull(message = "Content is required")
+    @NotBlank(message = "Content is required")
     private String content;
 
-    private Integer parentId; // Optional parentId
+    // Null for a top-level comment; set to a comment ID when replying.
+    @Schema(nullable = true, defaultValue = "null")
+    private Integer parentId;
 }
